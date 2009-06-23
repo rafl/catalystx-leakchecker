@@ -5,7 +5,7 @@ use PadWalker 'closed_over';
 use Scalar::Util 'weaken', 'isweak';;
 use aliased 'Data::Visitor::Callback', 'Visitor';
 
-use namespace::autoclean -also => [qw/Visitor visit_code/];
+use namespace::autoclean -also => [qw/Visitor visit_code format_table/];
 
 sub visit_code {
     my ($self, $code, $weak_ctx, $leaks) = @_;
