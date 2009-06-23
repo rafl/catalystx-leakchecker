@@ -52,7 +52,7 @@ sub format_table {
 
 sub found_leaks {
     my ($ctx, @leaks) = @_;
-    my $msg = "Leaked context:\n" . format_table(@leaks);
+    my $msg = "Leaked context from closure on stash:\n" . format_table(@leaks);
     $ctx->log->debug($msg) if $ctx->debug;
 }
 
