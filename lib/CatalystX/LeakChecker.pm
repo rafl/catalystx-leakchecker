@@ -32,8 +32,8 @@ after finalize => sub {
     );
     $visitor->visit($ctx->stash);
     return unless @leaks;
-    $ctx->found_leaks(@leaks);
 
+    $ctx->found_leaks(@leaks);
 };
 
 sub format_table {
