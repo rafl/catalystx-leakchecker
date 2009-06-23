@@ -20,14 +20,6 @@ sub visit_code {
     return $code;
 }
 
-sub format_table {
-    my @leaks = @_;
-
-    my $t = Text::SimpleTable->new([ 70, 'Variable' ]);
-    $t->row($_) for @leaks;
-    return $t->draw;
-}
-
 after finalize => sub {
     my ($ctx) = @_;
     my @leaks;
@@ -40,9 +32,21 @@ after finalize => sub {
     );
     $visitor->visit($ctx->stash);
     return unless @leaks;
+    $ctx->found_leaks(@leaks);
 
+};
+
+sub format_table {
+    my @leaks = @_;
+    my $t = Text::SimpleTable->new([ 70, 'Variable' ]);
+    $t->row($_) for @leaks;
+    return $t->draw;
+}
+
+sub found_leaks {
+    my ($ctx, @leaks) = @_;
     my $msg = "Leaked context:\n" . format_table(@leaks);
     $ctx->log->debug($msg) if $ctx->debug;
-};
+}
 
 1;
