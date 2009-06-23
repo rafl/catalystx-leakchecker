@@ -1,11 +1,13 @@
 package CatalystX::LeakChecker;
 
 use Moose::Role;
+use B::Deparse;
 use PadWalker 'closed_over';
 use Scalar::Util 'weaken', 'isweak';;
 use aliased 'Data::Visitor::Callback', 'Visitor';
 
-use namespace::autoclean -also => [qw/Visitor visit_code format_table/];
+use namespace::autoclean
+    -also => [qw/Visitor visit_code format_table deparse/];
 
 sub visit_code {
     my ($self, $code, $weak_ctx, $leaks) = @_;
@@ -14,7 +16,7 @@ sub visit_code {
     while (my ($name, $val) = each %{ $vars }) {
         next unless $weak_ctx == ${ $val };
         next if isweak ${ $val };
-        push @{ $leaks }, $name;
+        push @{ $leaks }, { code => $code, var => $name };
     }
 
     return $code;
@@ -36,10 +38,15 @@ after finalize => sub {
     $ctx->found_leaks(@leaks);
 };
 
+sub deparse {
+    my ($code) = @_;
+    return B::Deparse->new->coderef2text($code);
+}
+
 sub format_table {
     my @leaks = @_;
-    my $t = Text::SimpleTable->new([ 70, 'Variable' ]);
-    $t->row($_) for @leaks;
+    my $t = Text::SimpleTable->new([52, 'Code'], [ 15, 'Variable' ]);
+    $t->row(@$_) for map { [deparse($_->{code}), $_->{var}] } @leaks;
     return $t->draw;
 }
 
