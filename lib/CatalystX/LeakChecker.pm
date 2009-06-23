@@ -6,9 +6,6 @@ use PadWalker 'closed_over';
 use Scalar::Util 'weaken', 'isweak';;
 use aliased 'Data::Visitor::Callback', 'Visitor';
 
-use namespace::autoclean
-    -also => [qw/Visitor visit_code format_table deparse/];
-
 sub visit_code {
     my ($self, $code, $weak_ctx, $leaks) = @_;
     my $vars = closed_over $code;
@@ -20,6 +17,26 @@ sub visit_code {
     }
 
     return $code;
+}
+
+sub deparse {
+    my ($code) = @_;
+    return B::Deparse->new->coderef2text($code);
+}
+
+sub format_table {
+    my @leaks = @_;
+    my $t = Text::SimpleTable->new([52, 'Code'], [ 15, 'Variable' ]);
+    $t->row(@$_) for map { [deparse($_->{code}), $_->{var}] } @leaks;
+    return $t->draw;
+}
+
+use namespace::clean -except => 'meta';
+
+sub found_leaks {
+    my ($ctx, @leaks) = @_;
+    my $msg = "Leaked context from closure on stash:\n" . format_table(@leaks);
+    $ctx->log->debug($msg) if $ctx->debug;
 }
 
 after finalize => sub {
@@ -37,23 +54,5 @@ after finalize => sub {
 
     $ctx->found_leaks(@leaks);
 };
-
-sub deparse {
-    my ($code) = @_;
-    return B::Deparse->new->coderef2text($code);
-}
-
-sub format_table {
-    my @leaks = @_;
-    my $t = Text::SimpleTable->new([52, 'Code'], [ 15, 'Variable' ]);
-    $t->row(@$_) for map { [deparse($_->{code}), $_->{var}] } @leaks;
-    return $t->draw;
-}
-
-sub found_leaks {
-    my ($ctx, @leaks) = @_;
-    my $msg = "Leaked context from closure on stash:\n" . format_table(@leaks);
-    $ctx->log->debug($msg) if $ctx->debug;
-}
 
 1;
