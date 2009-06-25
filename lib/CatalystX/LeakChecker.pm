@@ -2,6 +2,7 @@ package CatalystX::LeakChecker;
 
 use Moose::Role;
 use B::Deparse;
+use Text::SimpleTable;
 use PadWalker 'closed_over';
 use Scalar::Util 'weaken', 'isweak';;
 use aliased 'Data::Visitor::Callback', 'Visitor';
