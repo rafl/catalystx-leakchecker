@@ -1,4 +1,5 @@
 package CatalystX::LeakChecker;
+# ABSTRACT: Debug memory leaks in Catalyst applications
 
 use Moose::Role;
 use B::Deparse;
@@ -33,6 +34,50 @@ sub format_table {
 }
 
 use namespace::clean -except => 'meta';
+
+=head1 SYNOPSIS
+
+    package MyApp;
+    use namespace::autoclean;
+
+    extends 'Catalyst';
+    with 'CatalystX::LeakChecker';
+
+    __PACKAGE__->setup;
+
+=head1 DESCRIPTION
+
+It's easy to create memory leaks in Catalyst applications and often they're
+hard to find. This module tries to help you finding them by automatically
+checking for common causes of leaks.
+
+Right now, only one cause for leaks is looked for: putting a closure, that
+closes over the Catalyst context (often called C<$ctx> or C<$c>), onto the
+stash. More checks might be implemented in the future.
+
+This module is intended for debugging only. I suggest to not enable it in a
+production environment.
+
+=method found_leaks(@leaks)
+
+If any leaks were found, this method is called at the end of each request. A
+list of leaks is passed to it. It logs a debug message
+
+    [debug] Leaked context from closure on stash:
+    .------------------------------------------------------+-----------------.
+    | Code                                                 | Variable        |
+    +------------------------------------------------------+-----------------+
+    | {                                                    | $ctx            |
+    |     package TestApp::Controller::Affe;               |                 |
+    |     use warnings;                                    |                 |
+    |     use strict 'refs';                               |                 |
+    |     $ctx->response->body('from leaky closure');      |                 |
+    | }                                                    |                 |
+    '------------------------------------------------------+-----------------'
+
+Override this method if you want leaks to be reported differently.
+
+=cut
 
 sub found_leaks {
     my ($ctx, @leaks) = @_;
