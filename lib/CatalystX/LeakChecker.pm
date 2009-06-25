@@ -53,7 +53,8 @@ checking for common causes of leaks.
 
 Right now, only one cause for leaks is looked for: putting a closure, that
 closes over the Catalyst context (often called C<$ctx> or C<$c>), onto the
-stash. More checks might be implemented in the future.
+stash, without weakening the reference first. More checks might be implemented
+in the future.
 
 This module is intended for debugging only. I suggest to not enable it in a
 production environment.
