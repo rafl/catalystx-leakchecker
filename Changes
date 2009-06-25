@@ -1,2 +1,5 @@
+0.02  Thu, 25 Jun 2009 10:37:04 +0200
+  * Depend on Test::More 0.88 for done_testing.
+
 0.01  Thu, 25 Jun 2009 06:37:11 +0200
   * Initial release.
