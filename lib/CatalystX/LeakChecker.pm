@@ -23,7 +23,7 @@ sub visit_code {
 
 sub deparse {
     my ($code) = @_;
-    return B::Deparse->new->coderef2text($code);
+    return q{sub } . B::Deparse->new->coderef2text($code) . q{;};
 }
 
 sub format_table {
