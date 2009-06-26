@@ -4,22 +4,8 @@ package CatalystX::LeakChecker;
 use Moose::Role;
 use B::Deparse;
 use Text::SimpleTable;
-use PadWalker 'closed_over';
-use Scalar::Util 'weaken', 'isweak';;
-use aliased 'Data::Visitor::Callback', 'Visitor';
-
-sub visit_code {
-    my ($self, $code, $weak_ctx, $leaks) = @_;
-    my $vars = closed_over $code;
-
-    while (my ($name, $val) = each %{ $vars }) {
-        next unless $weak_ctx == ${ $val };
-        next if isweak ${ $val };
-        push @{ $leaks }, { code => $code, var => $name };
-    }
-
-    return $code;
-}
+use Scalar::Util 'weaken';
+use Devel::Cycle 'find_cycle';
 
 sub deparse {
     my ($code) = @_;
@@ -31,6 +17,33 @@ sub format_table {
     my $t = Text::SimpleTable->new([52, 'Code'], [ 15, 'Variable' ]);
     $t->row(@$_) for map { [deparse($_->{code}), $_->{var}] } @leaks;
     return $t->draw;
+}
+
+sub format_leak {
+    my ($leak) = @_;
+    my $sym = 'a';
+    my @lines;
+    my $ret = '$ctx';
+    for my $element (@{ $leak }) {
+        my ($type, $index, $ref, $val, $weak) = @{ $element };
+        die $type if $weak;
+        if ($type eq 'HASH') {
+            $ret .= qq(->{$index}) if $type eq 'HASH';
+        }
+        elsif ($type eq 'ARRAY') {
+            $ret .= qq(->[$index]) if $type eq 'ARRAY';
+        }
+        elsif ($type eq 'SCALAR') {
+            $ret = qq(\${ ${ret} });
+        }
+        elsif ($type eq 'CODE') {
+            push @lines, qq(\$${sym} = ${ret};);
+            push @lines, qq(\$${sym} = sub ) . deparse($ref);
+            $ret = qq($index);
+            $sym++;
+        }
+    }
+    return join qq{\n} => @lines, $ret;
 }
 
 use namespace::clean -except => 'meta';
@@ -82,7 +95,13 @@ Override this method if you want leaks to be reported differently.
 
 sub found_leaks {
     my ($ctx, @leaks) = @_;
-    my $msg = "Leaked context from closure on stash:\n" . format_table(@leaks);
+    my $t = Text::SimpleTable->new([52, 'Code'], [ 15, 'Variable' ]);
+
+    for my $leak (@leaks) {
+        $t->row(format_leak($leak), '');
+    }
+
+    my $msg = "Circular reference:\n" . $t->draw;
     $ctx->log->debug($msg) if $ctx->debug;
 }
 
@@ -93,10 +112,11 @@ after finalize => sub {
     my $weak_ctx = $ctx;
     weaken $weak_ctx;
 
-    my $visitor = Visitor->new(
-        code => sub { visit_code(@_, $weak_ctx, \@leaks) },
-    );
-    $visitor->visit($ctx->stash);
+    find_cycle($ctx, sub {
+        my ($path) = @_;
+        push @leaks, $path
+            if $path->[0]->[2] == $weak_ctx;
+    });
     return unless @leaks;
 
     $ctx->found_leaks(@leaks);
