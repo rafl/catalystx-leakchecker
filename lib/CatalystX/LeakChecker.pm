@@ -20,8 +20,7 @@ sub format_table {
 }
 
 sub format_leak {
-    my ($leak) = @_;
-    my $sym = 'a';
+    my ($leak, $sym) = @_;
     my @lines;
     my $ret = '$ctx';
     for my $element (@{ $leak }) {
@@ -37,10 +36,10 @@ sub format_leak {
             $ret = qq(\${ ${ret} });
         }
         elsif ($type eq 'CODE') {
-            push @lines, qq(\$${sym} = ${ret};);
-            push @lines, qq(\$${sym} = sub ) . deparse($ref);
+            push @lines, qq(\$${$sym} = ${ret};);
+            push @lines, qq(\$${$sym} = sub ) . deparse($ref);
             $ret = qq($index);
-            $sym++;
+            ${ $sym }++;
         }
     }
     return join qq{\n} => @lines, $ret;
@@ -97,8 +96,9 @@ sub found_leaks {
     my ($ctx, @leaks) = @_;
     my $t = Text::SimpleTable->new([52, 'Code'], [ 15, 'Variable' ]);
 
+    my $sym = 'a';
     for my $leak (@leaks) {
-        $t->row(format_leak($leak), '');
+        $t->row(format_leak($leak, \$sym), '');
     }
 
     my $msg = "Circular reference:\n" . $t->draw;
