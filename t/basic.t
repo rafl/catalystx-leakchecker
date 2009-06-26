@@ -34,4 +34,28 @@ use Catalyst::Test 'TestApp';
     is($ctx->count_leaks, 0, 'no leak reported with a stashed closure, closing over a weak $ctx');
 }
 
+{
+    my ($resp, $ctx) = ctx_request('/affe/leak_closure_indirect');
+    is($resp->content, 'leak_closure_indirect');
+    is($ctx->count_leaks, 1, 'one leak reported with stashed closure, closing over something with a reference to $ctx');
+}
+
+{
+    my ($resp, $ctx) = ctx_request('/affe/weak_closure_indirect');
+    is($resp->content, 'weak_closure_indirect');
+    is($ctx->count_leaks, 0, 'no leak when closing over something holding a weak reference to $ctx');
+}
+
+{
+    my ($resp, $ctx) = ctx_request('/affe/stashed_ctx');
+    is($resp->content, 'stashed_ctx');
+    is($ctx->count_leaks, 1, 'one leak found when stashing $ctx');
+}
+
+{
+    my ($resp, $ctx) = ctx_request('/affe/stashed_weak_ctx');
+    is($resp->content, 'stashed_weak_ctx');
+    is($ctx->count_leaks, 0, 'no leak when stashing a weak $ctx');
+}
+
 done_testing;
