@@ -56,9 +56,8 @@ sub stashed_ctx : Local {
 
 sub stashed_weak_ctx : Local {
     my ($self, $ctx) = @_;
-    my $weak_ctx = $ctx;
-    weaken $weak_ctx;
-    $ctx->stash(ctx => $weak_ctx);
+    $ctx->stash(ctx => $ctx);
+    weaken $ctx->stash->{ctx};
     $ctx->response->body('stashed_weak_ctx');
 }
 
