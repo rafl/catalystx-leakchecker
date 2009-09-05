@@ -37,7 +37,7 @@ sub format_leak {
         }
         elsif ($type eq 'CODE') {
             push @lines, qq(\$${$sym} = ${ret};);
-            push @lines, qq(\$${$sym} = sub ) . deparse($ref);
+            push @lines, qq{code reference \$${$sym} deparses to: } . deparse($ref);
             $ret = qq($index);
             ${ $sym }++;
         }
@@ -94,14 +94,14 @@ Override this method if you want leaks to be reported differently.
 
 sub found_leaks {
     my ($ctx, @leaks) = @_;
-    my $t = Text::SimpleTable->new([52, 'Code'], [ 15, 'Variable' ]);
+    my $t = Text::SimpleTable->new(70);
 
     my $sym = 'a';
     for my $leak (@leaks) {
         $t->row(format_leak($leak, \$sym), '');
     }
 
-    my $msg = "Circular reference:\n" . $t->draw;
+    my $msg = "Circular reference detected:\n" . $t->draw;
     $ctx->log->debug($msg) if $ctx->debug;
 }
 
