@@ -63,29 +63,32 @@ It's easy to create memory leaks in Catalyst applications and often they're
 hard to find. This module tries to help you finding them by automatically
 checking for common causes of leaks.
 
-Right now, only one cause for leaks is looked for: putting a closure, that
-closes over the Catalyst context (often called C<$ctx> or C<$c>), onto the
-stash, without weakening the reference first. More checks might be implemented
-in the future.
-
 This module is intended for debugging only. I suggest to not enable it in a
 production environment.
 
 =method found_leaks(@leaks)
 
 If any leaks were found, this method is called at the end of each request. A
-list of leaks is passed to it. It logs a debug message
+list of leaks is passed to it. It logs a debug message like this:
 
-    [debug] Leaked context from closure on stash:
-    .------------------------------------------------------+-----------------.
-    | Code                                                 | Variable        |
+    [debug] Circular reference detected:
     +------------------------------------------------------+-----------------+
-    | {                                                    | $ctx            |
-    |     package TestApp::Controller::Affe;               |                 |
-    |     use warnings;                                    |                 |
-    |     use strict 'refs';                               |                 |
-    |     $ctx->response->body('from leaky closure');      |                 |
-    | }                                                    |                 |
+    | $ctx->{stash}->{ctx}                                                   |
+    '------------------------------------------------------+-----------------'
+
+It's also able to find leaks in code references. A debug message for that might
+look like this:
+
+    [debug] Circular reference detected:
+    +------------------------------------------------------+-----------------+
+    | $a = $ctx->{stash}->{leak_closure};                                    |
+    | code reference $a deparses to: sub {                                   |
+    |     package TestApp::Controller::Affe;                                 |
+    |     use warnings;                                                      |
+    |     use strict 'refs';                                                 |
+    |     $ctx->response->body('from leaky closure');                        |
+    | };                                                                     |
+    | ${ $ctx }                                                              |
     '------------------------------------------------------+-----------------'
 
 Override this method if you want leaks to be reported differently.
