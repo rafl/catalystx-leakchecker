@@ -1,3 +1,6 @@
+0.04  Sat, 12 Sep 2009 06:13:20 +0900
+  * Depend on PadWalker (Closes RT#49551).
+
 0.03  Sat, 05 Sep 2009 09:42:43 +0200
   * Port to Devel::Cycle. We're now able to report a broader range of leaks.
 
