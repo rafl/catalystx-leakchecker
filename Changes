@@ -1,3 +1,6 @@
+  * Depend on a later version of PadWalker to avoid segfaults in the
+    Catalyst test suite.
+
 0.04  Sat, 12 Sep 2009 06:13:20 +0900
   * Depend on PadWalker (Closes RT#49551).
 
