@@ -1,3 +1,6 @@
+0.06  Fri, 26 Mar 2010 21:15:31 +0100
+  * Use native traits instead of AttributeHelpers.
+
 0.05  Sun, 29 Nov 2009 17:38:51 +0100
   * Depend on a later version of PadWalker to avoid segfaults in the
     Catalyst test suite.
